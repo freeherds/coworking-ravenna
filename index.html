@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coworking Ravenna | Community & Workspace 🚀</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 10px; }
+        html { scroll-behavior: smooth; }
+        
+        #events-carousel {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        #events-carousel::-webkit-scrollbar { display: none; }
+        #events-carousel > div { scroll-snap-align: start; flex-shrink: 0; }
+    </style>
+</head>
+
+<body class="bg-black text-white font-sans">
+
+    <nav class="p-4 border-b border-white/10 bg-black/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center font-black text-black italic">CR</div>
+                <h1 class="text-xl font-black uppercase tracking-tighter hidden sm:block">
+                    Coworking <span class="text-amber-500">Ravenna</span>
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <a href="#eventi" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-amber-500 transition">Eventi</a>
+                <a href="#chi-siamo" class="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-amber-500 transition">Chi Siamo</a>
+                
+                <div class="flex items-center gap-2 relative">
+                    <a href="https://chat.whatsapp.com/Gku8AxnKOiB2zfXQBWB6Q6" target="_blank" 
+                       class="bg-[#25D366] px-4 py-2 rounded-full font-bold text-[10px] uppercase transition hover:scale-105 shadow-lg shadow-green-900/20">
+                        Gruppo WA
+                    </a>
+                    <button onclick="toggleQR()" class="bg-white/5 p-2 rounded-full hover:bg-white/10 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-width="2" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-6v-2h4z" />
+                        </svg>
+                    </button>
+                    <div id="qrBox" class="absolute top-full right-0 mt-3 opacity-0 scale-95 pointer-events-none transition duration-200 bg-white p-3 rounded-2xl shadow-2xl w-[160px]">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://chat.whatsapp.com/Gku8AxnKOiB2zfXQBWB6Q6" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <section id="chi-siamo" class="py-20 px-6 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <h2 class="text-amber-500 text-xs font-black uppercase tracking-[0.5em] mb-4 italic italic">Il tuo nuovo ufficio</h2>
+                <h3 class="text-6xl font-black uppercase tracking-tighter mb-6 leading-none">Più che uno spazio, <br><span class="text-amber-500">una Community.</span></h3>
+                <p class="text-gray-400 text-lg leading-relaxed mb-8">
+                    Il Coworking Ravenna è l'hub per freelance, creativi e professionisti nel cuore della Romagna. 
+                    Uno spazio flessibile progettato per far crescere le tue idee e connetterti con altri talenti locali.
+                </p>
+                <div class="flex gap-4">
+                    <div class="bg-white/5 border border-white/10 p-4 rounded-2xl">
+                        <span class="block text-2xl font-black">24/7</span>
+                        <span class="text-[10px] uppercase text-gray-500 font-bold">Accesso</span>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-4 rounded-2xl">
+                        <span class="block text-2xl font-black">1Gbps</span>
+                        <span class="text-[10px] uppercase text-gray-500 font-bold">Fibra Ottica</span>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-4 rounded-2xl">
+                        <span class="block text-2xl font-black">∞</span>
+                        <span class="text-[10px] uppercase text-gray-500 font-bold">Caffè</span>
+                    </div>
+                </div>
+            </div>
+            <div class="relative group">
+                <div class="absolute -inset-4 bg-amber-500/20 rounded-[40px] blur-2xl"></div>
+                <img src="https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?auto=format&fit=crop&q=80&w=1000" 
+                     class="relative rounded-[30px] border border-white/10 shadow-2xl transition group-hover:scale-[1.02] duration-500">
+            </div>
+        </section>
+
+        <section id="eventi" class="py-20 bg-zinc-950 px-6">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex justify-between items-end mb-12">
+                    <div>
+                        <h2 class="text-amber-500 text-xs font-black uppercase tracking-[0.5em] mb-2">Non mancare</h2>
+                        <h3 class="text-4xl font-black uppercase tracking-tighter italic text-white">Eventi in programma</h3>
+                    </div>
+                </div>
+                
+                <div id="events-carousel" class="gap-6 pb-10">
+                    <p class="text-gray-600 animate-pulse">Sincronizzando gli eventi...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="mt-20 border-t border-white/5 pt-20 pb-10 px-6">
+        <div class="max-w-7xl mx-auto flex flex-col items-center">
+            <span class="text-[10px] uppercase tracking-[0.4em] text-gray-500 font-black mb-6">Digital Architect</span>
+            <a href="https://www.instagram.com/gianfree182/" target="_blank" class="flex flex-col items-center group">
+                <div class="relative mb-4">
+                    <div class="absolute -inset-1 bg-gradient-to-tr from-amber-500 to-yellow-200 rounded-full blur opacity-0 group-hover:opacity-40 transition duration-500"></div>
+                    <img src="resources/gian_ghibli.png" alt="Gianfranco" 
+                         class="relative w-20 h-20 rounded-full object-cover border-4 border-black group-hover:border-amber-500 transition-all duration-300 shadow-2xl"
+                         onerror="this.src='https://via.placeholder.com/150'">
+                </div>
+                <span class="text-lg font-black italic uppercase tracking-tighter group-hover:text-amber-500 transition">@gianfree182</span>
+            </a>
+            <p class="mt-12 text-gray-600 text-[9px] uppercase font-bold tracking-widest italic text-center">
+                © 2026 Coworking Ravenna • Made with ❤️ in Romagna
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const eventsCSV = "IL_TUO_LINK_CSV_QUI";
+
+        function toggleQR() {
+            const qr = document.getElementById("qrBox");
+            qr.classList.toggle("opacity-0");
+            qr.classList.toggle("scale-95");
+            qr.classList.toggle("pointer-events-none");
+        }
+
+        // Qui inseriremo la logica PapaParse non appena avrai il CSV
+        // La logica sarà simile a quella dei film ma mappata su:
+        // Nome Evento, Data, Ora, Descrizione, Foto (Opzionale)
+    </script>
+</body>
+</html>
