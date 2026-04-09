@@ -168,6 +168,12 @@
                     const inizio = row["Da che ora"] || "--:--";
                     const fine = row["Fino a"] || "--:--";
                     const data = timestamp ? timestamp.split(' ')[0] : "TBD";
+                    // Sostituisci la vecchia logica con questa
+                    const formatTime = (time) => {
+                        if (!time) return "--:--";
+                        // Sostituisce i punti con i due punti e prende solo HH:mm
+                        return time.replace(/\./g, ':').substring(0, 5);
+                    };
                     
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dove)}`;
 
@@ -185,12 +191,12 @@
                             <div class="bg-white/5 p-4 rounded-2xl flex items-center gap-6 mb-8 border border-white/5">
                                 <div class="flex flex-col">
                                     <span class="text-[8px] text-gray-500 font-black uppercase">Start</span>
-                                    <span class="text-lg font-mono">${inizio.substring(0,5).replace('.',':')}</span>
+                                    <span class="text-lg font-mono">${formatTime(inizio)}</span>
                                 </div>
                                 <div class="w-[1px] h-8 bg-white/10"></div>
                                 <div class="flex flex-col">
                                     <span class="text-[8px] text-gray-500 font-black uppercase">End</span>
-                                    <span class="text-lg font-mono">${fine.substring(0,5).replace('.',':')}</span>
+                                    <span class="text-lg font-mono">${formatTime(fine)}</span>
                                 </div>
                             </div>
 
