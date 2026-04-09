@@ -171,8 +171,9 @@
                     // Sostituisci la vecchia logica con questa
                     const formatTime = (time) => {
                         if (!time) return "--:--";
-                        // Sostituisce i punti con i due punti e prende solo HH:mm
-                        return time.replace(/\./g, ':').substring(0, 5);
+                        // Sostituisce i punti con i due punti, rimuove secondi e spazi
+                        let clean = time.replace(/\./g, ':').trim();
+                        return clean.split(':').slice(0, 2).join(':'); 
                     };
                     
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dove)}`;
