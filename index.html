@@ -122,7 +122,7 @@
 
             <span class="text-[10px] uppercase tracking-[0.5em] text-gray-600 font-black mb-8">Digital Architect</span>
             <a href="https://www.instagram.com/gianfree182/" target="_blank" class="flex flex-col items-center group">
-                <img src="resources/gian_ghibli.png" class="w-24 h-24 rounded-full border-2 border-white/10 group-hover:border-amber-500 transition duration-500 mb-6">
+                <img src="resources/gian_ghibli.png" class="w-24 h-24 rounded-full border-2 border-white/10 group-hover:border-amber-500 transition duration-500 mb-6 object-cover" alt="Gianfranco">
                 <span class="text-xl font-black italic uppercase tracking-tighter group-hover:text-amber-500 transition">@gianfree182</span>
             </a>
             
@@ -155,16 +155,19 @@
                 const carousel = document.getElementById('events-carousel');
                 carousel.innerHTML = '';
                 results.data.forEach(row => {
-                    const dove = row["Dove"] || "TBD";
+                    const doveRaw = row["Dove"] || "TBD";
                     const proposto = row["Proposto da"] || "";
                     const data = row["Informazioni cronologiche"] ? row["Informazioni cronologiche"].split(' ')[0] : "TBD";
                     
+                    // RIPRISTINATO LINK MAPS
+                    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doveRaw)}`;
+
                     carousel.innerHTML += `
                         <div class="w-[340px] glass-card p-8 rounded-[2.5rem] group border border-white/5 hover:border-amber-500/30 transition-all duration-500">
                             <div class="flex justify-between items-start mb-10">
-                                <div class="bg-amber-500 text-black text-[11px] font-black px-5 py-2 rounded-full uppercase tracking-tighter">
-                                    📍 ${dove.split('-')[0].trim()}
-                                </div>
+                                <a href="${mapsLink}" target="_blank" class="bg-amber-500 text-black text-[11px] font-black px-5 py-2 rounded-full uppercase tracking-tighter hover:scale-105 transition">
+                                    📍 ${doveRaw.split('-')[0].trim()}
+                                </a>
                                 <span class="text-gray-500 text-[10px] font-bold mt-2 uppercase">${data}</span>
                             </div>
                             
