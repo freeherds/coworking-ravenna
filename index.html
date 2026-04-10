@@ -148,18 +148,25 @@
             let clean = time.replace(/\./g, ':').trim();
             return clean.split(':').slice(0, 2).join(':');
         };
-
         Papa.parse(eventsCSV, {
-            download: true, header: true, skipEmptyLines: true,
+            download: true, 
+            header: true, 
+            skipEmptyLines: true,
             complete: function(results) {
                 const carousel = document.getElementById('events-carousel');
                 carousel.innerHTML = '';
+                
                 results.data.forEach(row => {
+                    // FILTRO: Mostra l'evento solo se la colonna "Tu andrai di certo" è "Sì"
+                    //
+                    const confermato = row["Tu andrai di certo"];
+                    if (confermato !== "Sì") {
+                        return; // Salta questo evento
+                    }
+
                     const doveRaw = row["Dove"] || "TBD";
                     const proposto = row["Proposto da"] || "";
                     const data = row["Informazioni cronologiche"] ? row["Informazioni cronologiche"].split(' ')[0] : "TBD";
-                    
-                    // RIPRISTINATO LINK MAPS
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doveRaw)}`;
 
                     carousel.innerHTML += `
