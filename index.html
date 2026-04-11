@@ -145,13 +145,19 @@
 
         const formatTime = (time) => {
             if (!time) return "--:--";
-            let clean = time.replace(/\./g, ':').trim();
-            return clean.split(':').slice(0, 2).join(':');
+            return time.replace(/\./g, ':').split(':').slice(0, 2).join(':');
         };
+
         Papa.parse(eventsCSV, {
-            download: true, header: true, skipEmptyLines: true,
+            download: true, 
+            header: true, 
+            skipEmptyLines: true,
             complete: function(results) {
                 const carousel = document.getElementById('events-carousel');
+                
+                // Rimuove il "Syncing..." appena i dati sono pronti
+                carousel.innerHTML = ''; 
+                
                 const now = new Date();
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -159,16 +165,15 @@
                     // Filtro Confermati
                     if (row["Tu andrai di certo"] !== "Sì") return;
 
-                    // Parsing Data
+                    // Parsing Data dalla colonna "Che giorno"
                     const [gg, mm, aaaa] = row["Che giorno"].split('/');
                     const eventDateOnly = new Date(aaaa, mm - 1, gg);
                     const oraStr = row["Da che ora"] ? row["Da che ora"].replace(/\./g, ':') : "00:00";
                     const fullEventDate = new Date(`${aaaa}-${mm}-${gg}T${oraStr}`);
 
-                    // Controllo se Passato (Data precedente o oggi +1h)
+                    // Controllo Passato: se il giorno è prima di oggi o se oggi è passata più di 1h dall'inizio
                     const isPast = eventDateOnly < today || (now - fullEventDate) > (3600000);
 
-                    // Countdown Dinamico
                     let countdown = "";
                     if (!isPast) {
                         const diff = fullEventDate - now;
@@ -180,27 +185,39 @@
                     const dove = row["Dove"] || "TBD";
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dove)}`;
 
+                    // Stile condizionale: manteniamo il badge leggibile anche se passato
+                    const cardBg = isPast ? 'bg-zinc-800/40 border-zinc-700/30' : 'bg-zinc-900/80 border-white/5 hover:border-amber-500/50';
+                    const badgeBg = isPast ? 'bg-zinc-700 text-zinc-300' : 'bg-amber-500 text-black';
+
                     carousel.innerHTML += `
-                        <div class="min-w-[340px] glass-card p-8 rounded-[2.5rem] transition-all duration-500 
-                            ${isPast ? 'opacity-60 bg-zinc-900 scale-95' : 'hover:border-amber-500/50 hover:scale-105'}">
+                        <div class="min-w-[340px] p-8 rounded-[2.5rem] border transition-all duration-500 ${cardBg} ${isPast ? 'scale-95' : 'hover:scale-105'}">
                             <div class="flex justify-between items-start mb-10">
-                                <a href="${isPast ? '#' : mapsLink}" target="_blank" class="${isPast ? 'bg-zinc-800' : 'bg-amber-500'} text-black text-[10px] font-black px-4 py-2 rounded-full uppercase italic">
-                                    ${isPast ? 'CONCLUSO' : '📍 ' + dove.split('-')[0].trim()}
+                                <a href="${isPast ? '#' : mapsLink}" target="_blank" class="${badgeBg} text-[10px] font-black px-4 py-2 rounded-full uppercase italic transition shadow-sm">
+                                    ${isPast ? 'CONCLUSO - ' + dove.split('-')[0].trim() : '📍 ' + dove.split('-')[0].trim()}
                                 </a>
                                 <div class="text-right">
                                     <span class="text-zinc-500 text-[10px] font-bold block">${row["Che giorno"]}</span>
                                     ${!isPast ? `<span class="text-amber-500 text-[9px] font-black animate-pulse uppercase">${countdown}</span>` : ''}
                                 </div>
                             </div>
-                            <h4 class="text-2xl font-black uppercase mb-8 ${isPast ? 'text-zinc-400' : ''}">Lavoro Collettivo</h4>
+                            
+                            <h4 class="text-2xl font-black uppercase mb-8 ${isPast ? 'text-zinc-500' : 'text-white'}">Lavoro Collettivo</h4>
+                            
                             <div class="bg-white/5 p-4 rounded-2xl flex items-center gap-6 mb-8 border border-white/5 font-mono">
-                                <div><span class="text-[8px] text-zinc-500 block uppercase">Start</span>${formatTime(row["Da che ora"])}</div>
+                                <div class="${isPast ? 'text-zinc-500' : 'text-white'}">
+                                    <span class="text-[8px] text-zinc-600 block uppercase font-sans mb-1">Start</span>
+                                    ${formatTime(row["Da che ora"])}
+                                </div>
                                 <div class="w-[1px] h-8 bg-white/10"></div>
-                                <div><span class="text-[8px] text-zinc-500 block uppercase">End</span>${formatTime(row["Fino a"])}</div>
+                                <div class="${isPast ? 'text-zinc-500' : 'text-white'}">
+                                    <span class="text-[8px] text-zinc-600 block uppercase font-sans mb-1">End</span>
+                                    ${formatTime(row["Fino a"])}
+                                </div>
                             </div>
+
                             <div class="flex justify-between items-center text-[9px] font-black uppercase italic">
                                 <span class="text-zinc-600">BY ${row["Proposto da"] || 'COMMUNITY'}</span>
-                                <div class="w-2 h-2 rounded-full ${isPast ? 'bg-zinc-800' : 'bg-amber-500 shadow-[0_0_10px_#f59e0b]'}"></div>
+                                <div class="w-2 h-2 rounded-full ${isPast ? 'bg-zinc-700' : 'bg-amber-500 shadow-[0_0_15px_#f59e0b]'}"></div>
                             </div>
                         </div>
                     `;
