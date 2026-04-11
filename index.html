@@ -156,30 +156,67 @@
                 const carousel = document.getElementById('events-carousel');
                 carousel.innerHTML = '';
                 
-                results.data.forEach(row => {
-                    // Continuiamo a filtrare solo quelli confermati
-                    if (row["Tu andrai di certo"] !== "Sì") {
-                        return; 
-                    }
+                const now = new Date();
+                const futureEvents = [];
+                const pastEvents = [];
 
+                results.data.forEach(row => {
+                    if (row["Tu andrai di certo"] !== "Sì") return;
+
+                    // Parsing della data (Colonna "Che giorno") e ora (Colonna "Da che ora")
+                    const dataStr = row["Che giorno"]; // Formato previsto: GG/MM/AAAA
+                    const oraStr = row["Da che ora"] ? row["Da che ora"].replace(/\./g, ':') : "00:00";
+                    
+                    const [gg, mm, aaaa] = dataStr.split('/');
+                    const eventDate = new Date(`${aaaa}-${mm}-${gg}T${oraStr}`);
+                    
+                    // Delta di un'ora: l'evento è "passato" un'ora dopo il suo inizio
+                    const isPast = (now - eventDate) > (60 * 60 * 1000);
+
+                    if (isPast) {
+                        pastEvents.push(row);
+                    } else {
+                        futureEvents.push(row);
+                    }
+                });
+
+                // Logica di visualizzazione:
+                // Se ci sono eventi futuri, mostriamo solo quelli + max 2 passati
+                // Se non ci sono eventi futuri, mostriamo i passati (grigietti)
+                const eventsToShow = [...futureEvents];
+                const pastToDisplay = pastEvents.slice(-2); // Prende gli ultimi due cronologicamente
+
+                // Se non ci sono eventi futuri, carichiamo i passati, altrimenti solo i 2 di backup
+                const finalSelection = futureEvents.length > 0 ? [...pastToDisplay, ...futureEvents] : pastEvents;
+
+                finalSelection.forEach(row => {
                     const doveRaw = row["Dove"] || "TBD";
                     const proposto = row["Proposto da"] || "";
-                    
-                    // NUOVA LOGICA: Prendiamo la data dalla colonna "Che giorno" invece che dai timestamp
                     const dataEvento = row["Che giorno"] || "TBD";
-                    
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doveRaw)}`;
+                    
+                    // Ricalcolo isPast per lo styling
+                    const [gg, mm, aaaa] = dataEvento.split('/');
+                    const oraStr = row["Da che ora"] ? row["Da che ora"].replace(/\./g, ':') : "00:00";
+                    const eventDate = new Date(`${aaaa}-${mm}-${gg}T${oraStr}`);
+                    const isPast = (now - eventDate) > (60 * 60 * 1000);
+
+                    // Classi CSS condizionali per l'effetto "grigietto"
+                    const cardStyle = isPast 
+                        ? "opacity-40 grayscale pointer-events-none scale-95" 
+                        : "hover:border-amber-500/30 hover:scale-105";
+                    const badgeText = isPast ? "CONCLUSO" : `📍 ${doveRaw.split('-')[0].trim()}`;
 
                     carousel.innerHTML += `
-                        <div class="w-[340px] glass-card p-8 rounded-[2.5rem] group border border-white/5 hover:border-amber-500/30 transition-all duration-500">
+                        <div class="w-[340px] glass-card p-8 rounded-[2.5rem] group border border-white/5 transition-all duration-500 ${cardStyle}">
                             <div class="flex justify-between items-start mb-10">
-                                <a href="${mapsLink}" target="_blank" class="bg-amber-500 text-black text-[11px] font-black px-5 py-2 rounded-full uppercase tracking-tighter hover:scale-105 transition">
-                                    📍 ${doveRaw.split('-')[0].trim()}
+                                <a href="${isPast ? '#' : mapsLink}" target="_blank" class="${isPast ? 'bg-zinc-800' : 'bg-amber-500'} text-black text-[11px] font-black px-5 py-2 rounded-full uppercase tracking-tighter transition">
+                                    ${badgeText}
                                 </a>
                                 <span class="text-gray-500 text-[10px] font-bold mt-2 uppercase">${dataEvento}</span>
                             </div>
                             
-                            <h4 class="text-2xl font-black uppercase mb-8 group-hover:text-amber-500 transition">Lavoro Collettivo</h4>
+                            <h4 class="text-2xl font-black uppercase mb-8 ${isPast ? 'text-zinc-600' : 'group-hover:text-amber-500'} transition">Lavoro Collettivo</h4>
                             
                             <div class="bg-white/5 p-4 rounded-2xl flex items-center gap-6 mb-8 border border-white/5">
                                 <div class="flex flex-col"><span class="text-[8px] text-gray-500 font-black uppercase">Start</span><span class="text-lg font-mono">${formatTime(row["Da che ora"])}</span></div>
@@ -188,8 +225,10 @@
                             </div>
 
                             <div class="flex justify-between items-center text-[9px] font-black uppercase italic">
-                                <span class="text-amber-500/50">${proposto ? 'By ' + proposto : 'Confirmed'}</span>
-                                <div class="flex gap-1"><div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div><div class="w-1.5 h-1.5 rounded-full bg-amber-500/30"></div></div>
+                                <span class="${isPast ? 'text-zinc-700' : 'text-amber-500/50'}">${proposto ? 'By ' + proposto : 'Confirmed'}</span>
+                                <div class="flex gap-1">
+                                    <div class="w-1.5 h-1.5 rounded-full ${isPast ? 'bg-zinc-800' : 'bg-amber-500'}"></div>
+                                </div>
                             </div>
                         </div>
                     `;
