@@ -157,78 +157,65 @@
                 carousel.innerHTML = '';
                 
                 const now = new Date();
-                const futureEvents = [];
-                const pastEvents = [];
+                // Reset orario per confronto solo date
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
                 results.data.forEach(row => {
                     if (row["Tu andrai di certo"] !== "Sì") return;
 
-                    // Parsing della data (Colonna "Che giorno") e ora (Colonna "Da che ora")
-                    const dataStr = row["Che giorno"]; // Formato previsto: GG/MM/AAAA
+                    // Parsing data evento
+                    const [gg, mm, aaaa] = row["Che giorno"].split('/');
+                    const eventDateOnly = new Date(aaaa, mm - 1, gg);
+                    
                     const oraStr = row["Da che ora"] ? row["Da che ora"].replace(/\./g, ':') : "00:00";
-                    
-                    const [gg, mm, aaaa] = dataStr.split('/');
-                    const eventDate = new Date(`${aaaa}-${mm}-${gg}T${oraStr}`);
-                    
-                    // Delta di un'ora: l'evento è "passato" un'ora dopo il suo inizio
-                    const isPast = (now - eventDate) > (60 * 60 * 1000);
+                    const fullEventDate = new Date(`${aaaa}-${mm}-${gg}T${oraStr}`);
 
-                    if (isPast) {
-                        pastEvents.push(row);
-                    } else {
-                        futureEvents.push(row);
+                    // LOGICA DI STATO
+                    // Passato se: la data è precedente a oggi OPPURE è oggi ma l'ora è passata da +1h
+                    const isPast = eventDateOnly < today || (now - fullEventDate) > (60 * 60 * 1000);
+
+                    // LOGICA COUNTDOWN (Solo per eventi futuri)
+                    let countdownText = "";
+                    if (!isPast) {
+                        const diffTime = fullEventDate - now;
+                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                        const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+                        if (diffDays > 0) {
+                            countdownText = `Tra ${diffDays}gg e ${diffHours}h`;
+                        } else {
+                            countdownText = `Tra ${diffHours} ore`;
+                        }
                     }
-                });
 
-                // Logica di visualizzazione:
-                // Se ci sono eventi futuri, mostriamo solo quelli + max 2 passati
-                // Se non ci sono eventi futuri, mostriamo i passati (grigietti)
-                const eventsToShow = [...futureEvents];
-                const pastToDisplay = pastEvents.slice(-2); // Prende gli ultimi due cronologicamente
-
-                // Se non ci sono eventi futuri, carichiamo i passati, altrimenti solo i 2 di backup
-                const finalSelection = futureEvents.length > 0 ? [...pastToDisplay, ...futureEvents] : pastEvents;
-
-                finalSelection.forEach(row => {
                     const doveRaw = row["Dove"] || "TBD";
                     const proposto = row["Proposto da"] || "";
-                    const dataEvento = row["Che giorno"] || "TBD";
-                    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doveRaw)}`;
-                    
-                    // Ricalcolo isPast per lo styling
-                    const [gg, mm, aaaa] = dataEvento.split('/');
-                    const oraStr = row["Da che ora"] ? row["Da che ora"].replace(/\./g, ':') : "00:00";
-                    const eventDate = new Date(`${aaaa}-${mm}-${gg}T${oraStr}`);
-                    const isPast = (now - eventDate) > (60 * 60 * 1000);
-
-                    // Classi CSS condizionali per l'effetto "grigietto"
-                    const cardStyle = isPast 
-                        ? "opacity-40 grayscale pointer-events-none scale-95" 
-                        : "hover:border-amber-500/30 hover:scale-105";
-                    const badgeText = isPast ? "CONCLUSO" : `📍 ${doveRaw.split('-')[0].trim()}`;
+                    const cardStyle = isPast ? "opacity-30 grayscale pointer-events-none" : "hover:border-amber-500/30 scale-100";
+                    const badgeLabel = isPast ? "CONCLUSO" : `📍 ${doveRaw.split('-')[0].trim()}`;
 
                     carousel.innerHTML += `
                         <div class="w-[340px] glass-card p-8 rounded-[2.5rem] group border border-white/5 transition-all duration-500 ${cardStyle}">
                             <div class="flex justify-between items-start mb-10">
-                                <a href="${isPast ? '#' : mapsLink}" target="_blank" class="${isPast ? 'bg-zinc-800' : 'bg-amber-500'} text-black text-[11px] font-black px-5 py-2 rounded-full uppercase tracking-tighter transition">
-                                    ${badgeText}
-                                </a>
-                                <span class="text-gray-500 text-[10px] font-bold mt-2 uppercase">${dataEvento}</span>
+                                <div class="${isPast ? 'bg-zinc-800' : 'bg-amber-500'} text-black text-[10px] font-black px-4 py-2 rounded-full uppercase italic">
+                                    ${badgeLabel}
+                                </div>
+                                <div class="flex flex-col items-end">
+                                    <span class="text-gray-500 text-[10px] font-bold uppercase">${row["Che giorno"]}</span>
+                                    ${!isPast ? `<span class="text-amber-500 text-[9px] font-black animate-pulse mt-1">${countdownText}</span>` : ''}
+                                </div>
                             </div>
                             
-                            <h4 class="text-2xl font-black uppercase mb-8 ${isPast ? 'text-zinc-600' : 'group-hover:text-amber-500'} transition">Lavoro Collettivo</h4>
+                            <h4 class="text-2xl font-black uppercase mb-8 ${isPast ? 'text-zinc-600' : ''}">Lavoro Collettivo</h4>
                             
                             <div class="bg-white/5 p-4 rounded-2xl flex items-center gap-6 mb-8 border border-white/5">
-                                <div class="flex flex-col"><span class="text-[8px] text-gray-500 font-black uppercase">Start</span><span class="text-lg font-mono">${formatTime(row["Da che ora"])}</span></div>
+                                <div class="flex flex-col"><span class="text-[8px] text-gray-400 uppercase">Start</span><span class="text-lg font-mono">${formatTime(row["Da che ora"])}</span></div>
                                 <div class="w-[1px] h-8 bg-white/10"></div>
-                                <div class="flex flex-col"><span class="text-[8px] text-gray-500 font-black uppercase">End</span><span class="text-lg font-mono">${formatTime(row["Fino a"])}</span></div>
+                                <div class="flex flex-col"><span class="text-[8px] text-gray-400 uppercase">End</span><span class="text-lg font-mono">${formatTime(row["Fino a"])}</span></div>
                             </div>
 
                             <div class="flex justify-between items-center text-[9px] font-black uppercase italic">
-                                <span class="${isPast ? 'text-zinc-700' : 'text-amber-500/50'}">${proposto ? 'By ' + proposto : 'Confirmed'}</span>
-                                <div class="flex gap-1">
-                                    <div class="w-1.5 h-1.5 rounded-full ${isPast ? 'bg-zinc-800' : 'bg-amber-500'}"></div>
-                                </div>
+                                <span class="text-gray-600 italic">BY ${proposto.toUpperCase()}</span>
+                                <div class="w-2 h-2 rounded-full ${isPast ? 'bg-zinc-800' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]'}"></div>
                             </div>
                         </div>
                     `;
