@@ -155,6 +155,10 @@
             complete: function(results) {
                 const carousel = document.getElementById('events-carousel');
                 carousel.innerHTML = ''; 
+                
+                // Risolviamo il problema dei bordi tagliati aggiungendo padding al contenitore
+                carousel.classList.add('py-12', 'px-8'); 
+
                 const now = new Date();
                 let activeEvents = [];
                 let pastEvents = [];
@@ -169,6 +173,7 @@
                     eventData.isPast ? pastEvents.push(eventData) : activeEvents.push(eventData);
                 });
 
+                // Ordinamento
                 pastEvents.sort((a, b) => b.endDate - a.endDate);
                 activeEvents.sort((a, b) => a.startDate - b.startDate);
 
@@ -177,12 +182,14 @@
                     const doveShort = doveFull.split('-')[0].trim().toUpperCase();
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doveFull)}`;
                     
-                    const cardStyle = ev.isPast ? 'bg-zinc-900/60 border-zinc-700 opacity-80' : 'bg-zinc-900 border-white/20 shadow-2xl shadow-amber-500/5';
-                    const textColor = ev.isPast ? 'text-zinc-400' : 'text-white';
-                    const locationColor = ev.isPast ? 'text-zinc-300' : 'text-amber-500';
+                    // Stile card migliorato per evitare tagli sui bordi
+                    const cardStyle = ev.isPast ? 'bg-zinc-900/60 border-zinc-800 opacity-80' : 'bg-zinc-900 border-white/20 shadow-xl';
+                    const locationColor = ev.isPast ? 'text-zinc-400' : 'text-amber-500';
 
                     return `
-                        <div class="min-w-[340px] p-8 rounded-[2.5rem] border transition-all duration-500 ${cardStyle} ${ev.isPast ? 'scale-95' : 'hover:scale-105'}">
+                        <div class="relative min-w-[340px] p-8 rounded-[2.5rem] border transition-all duration-500 ease-out 
+                            ${cardStyle} ${ev.isPast ? 'scale-95' : 'hover:scale-110 hover:z-50 hover:border-amber-500/50 hover:shadow-amber-500/20'}">
+                            
                             <div class="flex justify-between items-start mb-6">
                                 ${ev.isLive ? '<span class="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse">● LIVE</span>' : 
                                 ev.isPast ? '<span class="border border-zinc-700 text-zinc-500 text-[10px] px-3 py-1 rounded-full">PASSED</span>' : 
@@ -191,17 +198,17 @@
                             </div>
                             
                             <div class="${locationColor} text-[12px] font-black tracking-widest mb-2 uppercase italic">📍 ${doveShort}</div>
-                            <h4 class="text-2xl font-black uppercase mb-8 ${textColor}">Lavoro Collettivo</h4>
+                            <h4 class="text-2xl font-black uppercase mb-8 ${ev.isPast ? 'text-zinc-500' : 'text-white'}">Lavoro Collettivo</h4>
                             
                             <div class="bg-white/5 p-4 rounded-2xl flex items-center gap-6 mb-8 border border-white/5 font-mono">
-                                <div class="${textColor}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Inizio</span>${formatTime(ev["Da che ora"])}</div>
+                                <div class="${ev.isPast ? 'text-zinc-400' : 'text-white'}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Inizio</span>${formatTime(ev["Da che ora"])}</div>
                                 <div class="w-[1px] h-8 bg-white/10"></div>
-                                <div class="${textColor}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Fine</span>${formatTime(ev["Fino a"])}</div>
+                                <div class="${ev.isPast ? 'text-zinc-400' : 'text-white'}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Fine</span>${formatTime(ev["Fino a"])}</div>
                             </div>
 
                             <div class="flex justify-between items-center text-[9px] font-black uppercase italic">
-                                <span class="text-zinc-600">BY ${ev["Proposto da"] || 'COMMUNITY'}</span>
-                                ${!ev.isPast ? `<a href="${mapsLink}" target="_blank" class="text-amber-500 underline tracking-tighter">Vedi Mappa</a>` : ''}
+                                <span class="text-zinc-600 font-bold">BY ${ev["Proposto da"] || 'COMMUNITY'}</span>
+                                ${!ev.isPast ? `<a href="${mapsLink}" target="_blank" class="text-amber-500 underline hover:text-white transition">Vedi Mappa</a>` : ''}
                             </div>
                         </div>`;
                 };
@@ -210,10 +217,10 @@
 
                 if (pastEvents.length > 0) {
                     carousel.innerHTML += `
-                        <div class="flex flex-col items-center justify-center min-w-[200px] px-4">
-                            <span class="text-white text-2xl font-black uppercase italic tracking-tighter mb-2">BEFORE</span>
-                            <div class="text-white text-5xl font-light animate-bounce-x">→</div>
-                            <div class="h-1 w-12 bg-amber-500 mt-2 rounded-full"></div>
+                        <div class="flex flex-col items-center justify-center min-w-[220px] px-10">
+                            <span class="text-white text-3xl font-black uppercase italic tracking-tighter mb-2 shadow-sm">BEFORE</span>
+                            <div class="text-white text-6xl font-light animate-pulse rotate-0">→</div>
+                            <div class="h-1.5 w-16 bg-amber-500 mt-2 rounded-full shadow-[0_0_10px_#f59e0b]"></div>
                         </div>`;
                 }
 
