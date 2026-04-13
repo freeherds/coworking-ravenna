@@ -142,109 +142,99 @@
             qr.classList.toggle("scale-95");
             qr.classList.toggle("pointer-events-none");
         }
-
-        // Funzione per pulire l'orario ed evitare errori matematici
+        
         const formatTime = (time) => {
             if (!time) return "00:00";
-            // Sostituisce punti con due punti e rimuove spazi o secondi extra
             let clean = time.toString().replace(/\./g, ':').trim();
             let parts = clean.split(':');
-            let h = parts[0].padStart(2, '0');
-            let m = (parts[1] || "00").slice(0, 2).padStart(2, '0');
-            return `${h}:${m}`;
+            return `${parts[0].padStart(2, '0')}:${(parts[1] || "00").slice(0, 2).padStart(2, '0')}`;
         };
 
         Papa.parse(eventsCSV, {
-            download: true, 
-            header: true, 
-            skipEmptyLines: true,
+            download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
                 const carousel = document.getElementById('events-carousel');
                 carousel.innerHTML = ''; 
-                
                 const now = new Date();
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+                let activeEvents = [];
+                let pastEvents = [];
 
                 results.data.forEach(row => {
-                    // Filtra solo chi ha confermato con "Sì"
                     if (row["Tu andrai di certo"] !== "Sì") return;
 
-                    // Parsing della data colonna "Che giorno" (es. 13/04/2026)
-                    const dateStr = row["Che giorno"] ? row["Che giorno"].trim() : "";
-                    const dateParts = dateStr.split('/');
-                    if (dateParts.length !== 3) return;
-
+                    const dateParts = row["Che giorno"].split('/');
                     const gg = parseInt(dateParts[0], 10);
                     const mm = parseInt(dateParts[1], 10) - 1;
                     const aaaa = parseInt(dateParts[2], 10);
+
+                    const startStr = formatTime(row["Da che ora"]);
+                    const endStr = formatTime(row["Fino a"]);
                     
-                    const eventDateOnly = new Date(aaaa, mm, gg);
-                    const timeStr = formatTime(row["Da che ora"]);
-                    const [h, m] = timeStr.split(':');
-                    const fullEventDate = new Date(aaaa, mm, gg, parseInt(h, 10), parseInt(m, 10));
+                    const startDate = new Date(aaaa, mm, gg, ...startStr.split(':'));
+                    const endDate = new Date(aaaa, mm, gg, ...endStr.split(':'));
 
-                    // Se la data calcolata non è valida, esce per evitare NaN
-                    if (isNaN(fullEventDate.getTime())) return;
+                    // LOGICA STATO
+                    const isLive = now >= startDate && now <= endDate;
+                    const isPast = now > endDate;
 
-                    // Logica: grigio se il giorno è passato o se oggi è passata 1h dall'inizio
-                    const isPast = eventDateOnly < today || (now - fullEventDate) > 3600000;
+                    const eventData = { ...row, startDate, endDate, isLive, isPast, startStr, endStr };
+                    isPast ? pastEvents.push(eventData) : activeEvents.push(eventData);
+                });
 
-                    let countdown = "";
-                    if (!isPast) {
-                        const diff = fullEventDate - now;
-                        const d = Math.floor(diff / 86400000);
-                        const hrs = Math.floor((diff % 86400000) / 3600000);
-                        const mins = Math.floor((diff % 3600000) / 60000);
+                // Ordinamento: i più recenti per primi tra i passati
+                pastEvents.sort((a, b) => b.endDate - a.endDate);
+                activeEvents.sort((a, b) => a.startDate - b.startDate);
 
-                        if (d > 0) {
-                            countdown = `Tra ${d}gg e ${hrs}h`;
-                        } else if (hrs > 0) {
-                            countdown = `Tra ${hrs}h e ${mins}m`;
-                        } else {
-                            countdown = `Tra ${mins} min`;
-                        }
-                    }
-
-                    const dove = row["Dove"] || "TBD";
-                    const locationName = dove.split('-')[0].trim();
+                const renderCard = (ev) => {
+                    const dove = ev["Dove"] || "TBD";
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dove)}`;
                     
-                    const cardBg = isPast ? 'bg-zinc-800/40 border-zinc-700/30 opacity-70' : 'bg-zinc-900/80 border-white/5 hover:border-amber-500/50';
-                    const badgeBg = isPast ? 'bg-zinc-700 text-zinc-300' : 'bg-amber-500 text-black';
+                    let statusBadge = "";
+                    if (ev.isLive) {
+                        statusBadge = `<span class="bg-red-600 text-white animate-pulse px-3 py-1 rounded-full">● LIVE</span>`;
+                    } else if (ev.isPast) {
+                        statusBadge = `<span class="bg-zinc-800 text-zinc-500 px-3 py-1 rounded-full italic">CONCLUSO</span>`;
+                    } else {
+                        statusBadge = `<span class="bg-amber-500 text-black px-3 py-1 rounded-full">📍 ${dove.split('-')[0].trim()}</span>`;
+                    }
 
-                    carousel.innerHTML += `
-                        <div class="min-w-[340px] p-8 rounded-[2.5rem] border transition-all duration-500 ${cardBg} ${isPast ? 'scale-95' : 'hover:scale-105'}">
-                            <div class="flex justify-between items-start mb-10">
-                                <a href="${isPast ? '#' : mapsLink}" target="_blank" class="${badgeBg} text-[10px] font-black px-4 py-2 rounded-full uppercase italic transition">
-                                    ${isPast ? 'CONCLUSO - ' : '📍 '}${locationName}
-                                </a>
-                                <div class="text-right">
-                                    <span class="text-zinc-500 text-[10px] font-bold block">${dateStr}</span>
-                                    ${!isPast ? `<span class="text-amber-500 text-[9px] font-black animate-pulse uppercase">${countdown}</span>` : ''}
-                                </div>
+                    return `
+                        <div class="min-w-[340px] p-8 rounded-[2.5rem] border transition-all duration-500 
+                            ${ev.isPast ? 'bg-zinc-900/40 border-zinc-800 opacity-60 scale-95' : 'bg-zinc-900/90 border-white/10 hover:border-amber-500/50 hover:scale-105'}">
+                            <div class="flex justify-between items-start mb-10 text-[10px] font-black uppercase italic">
+                                ${statusBadge}
+                                <span class="text-zinc-500">${ev["Che giorno"]}</span>
                             </div>
-                            
-                            <h4 class="text-2xl font-black uppercase mb-8 ${isPast ? 'text-zinc-500' : 'text-white'}">Lavoro Collettivo</h4>
-                            
+                            <h4 class="text-2xl font-black uppercase mb-8 ${ev.isPast ? 'text-zinc-600' : 'text-white'}">Lavoro Collettivo</h4>
                             <div class="bg-white/5 p-4 rounded-2xl flex items-center gap-6 mb-8 border border-white/5 font-mono">
-                                <div class="${isPast ? 'text-zinc-500' : 'text-white'}">
-                                    <span class="text-[8px] text-zinc-600 block uppercase font-sans mb-1">Start</span>
-                                    ${timeStr}
-                                </div>
+                                <div class="${ev.isPast ? 'text-zinc-600' : 'text-white'}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Inizio</span>${ev.startStr}</div>
                                 <div class="w-[1px] h-8 bg-white/10"></div>
-                                <div class="${isPast ? 'text-zinc-500' : 'text-white'}">
-                                    <span class="text-[8px] text-zinc-600 block uppercase font-sans mb-1">End</span>
-                                    ${formatTime(row["Fino a"])}
-                                </div>
+                                <div class="${ev.isPast ? 'text-zinc-600' : 'text-white'}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Fine</span>${ev.endStr}</div>
                             </div>
-
                             <div class="flex justify-between items-center text-[9px] font-black uppercase italic">
-                                <span class="text-zinc-600">BY ${(row["Proposto da"] || 'Gian').toUpperCase()}</span>
-                                <div class="w-2 h-2 rounded-full ${isPast ? 'bg-zinc-700' : 'bg-amber-500 shadow-[0_0_15px_#f59e0b]'}"></div>
+                                <span class="text-zinc-600">BY ${ev["Proposto da"] || 'GIAN'}</span>
+                                <a href="${ev.isPast ? '#' : mapsLink}" target="_blank" class="text-amber-500 underline ${ev.isPast ? 'hidden' : ''}">Maps</a>
                             </div>
-                        </div>
-                    `;
-                });
+                        </div>`;
+                };
+
+                // Render Active
+                activeEvents.forEach(ev => carousel.innerHTML += renderCard(ev));
+
+                // Separatore Cronologico
+                if (pastEvents.length > 0) {
+                    carousel.innerHTML += `
+                        <div class="flex flex-col items-center justify-center min-w-[150px] px-8 group">
+                            <div class="h-px w-full bg-zinc-800 mb-4"></div>
+                            <span class="text-[10px] font-black text-zinc-700 uppercase vertical-text tracking-widest mb-4 group-hover:text-amber-500 transition">Before</span>
+                            <div class="text-zinc-800 text-3xl">→</div>
+                            <div class="h-px w-full bg-zinc-800 mt-4"></div>
+                        </div>`;
+                }
+
+                // Render Past
+                pastEvents.forEach(ev => carousel.innerHTML += renderCard(ev));
             }
         });
     </script>
