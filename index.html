@@ -156,84 +156,67 @@
                 const carousel = document.getElementById('events-carousel');
                 carousel.innerHTML = ''; 
                 const now = new Date();
-
                 let activeEvents = [];
                 let pastEvents = [];
 
                 results.data.forEach(row => {
                     if (row["Tu andrai di certo"] !== "Sì") return;
-
                     const dateParts = row["Che giorno"].split('/');
-                    const gg = parseInt(dateParts[0], 10);
-                    const mm = parseInt(dateParts[1], 10) - 1;
-                    const aaaa = parseInt(dateParts[2], 10);
-
-                    const startStr = formatTime(row["Da che ora"]);
-                    const endStr = formatTime(row["Fino a"]);
+                    const startDate = new Date(dateParts[2], dateParts[1]-1, dateParts[0], ...formatTime(row["Da che ora"]).split(':'));
+                    const endDate = new Date(dateParts[2], dateParts[1]-1, dateParts[0], ...formatTime(row["Fino a"]).split(':'));
                     
-                    const startDate = new Date(aaaa, mm, gg, ...startStr.split(':'));
-                    const endDate = new Date(aaaa, mm, gg, ...endStr.split(':'));
-
-                    // LOGICA STATO
-                    const isLive = now >= startDate && now <= endDate;
-                    const isPast = now > endDate;
-
-                    const eventData = { ...row, startDate, endDate, isLive, isPast, startStr, endStr };
-                    isPast ? pastEvents.push(eventData) : activeEvents.push(eventData);
+                    const eventData = { ...row, startDate, endDate, isLive: (now >= startDate && now <= endDate), isPast: (now > endDate) };
+                    eventData.isPast ? pastEvents.push(eventData) : activeEvents.push(eventData);
                 });
 
-                // Ordinamento: i più recenti per primi tra i passati
                 pastEvents.sort((a, b) => b.endDate - a.endDate);
                 activeEvents.sort((a, b) => a.startDate - b.startDate);
 
                 const renderCard = (ev) => {
-                    const dove = ev["Dove"] || "TBD";
-                    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dove)}`;
+                    const doveFull = ev["Dove"] || "TBD";
+                    const doveShort = doveFull.split('-')[0].trim().toUpperCase();
+                    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doveFull)}`;
                     
-                    let statusBadge = "";
-                    if (ev.isLive) {
-                        statusBadge = `<span class="bg-red-600 text-white animate-pulse px-3 py-1 rounded-full">● LIVE</span>`;
-                    } else if (ev.isPast) {
-                        statusBadge = `<span class="bg-zinc-800 text-zinc-500 px-3 py-1 rounded-full italic">CONCLUSO</span>`;
-                    } else {
-                        statusBadge = `<span class="bg-amber-500 text-black px-3 py-1 rounded-full">📍 ${dove.split('-')[0].trim()}</span>`;
-                    }
+                    const cardStyle = ev.isPast ? 'bg-zinc-900/60 border-zinc-700 opacity-80' : 'bg-zinc-900 border-white/20 shadow-2xl shadow-amber-500/5';
+                    const textColor = ev.isPast ? 'text-zinc-400' : 'text-white';
+                    const locationColor = ev.isPast ? 'text-zinc-300' : 'text-amber-500';
 
                     return `
-                        <div class="min-w-[340px] p-8 rounded-[2.5rem] border transition-all duration-500 
-                            ${ev.isPast ? 'bg-zinc-900/40 border-zinc-800 opacity-60 scale-95' : 'bg-zinc-900/90 border-white/10 hover:border-amber-500/50 hover:scale-105'}">
-                            <div class="flex justify-between items-start mb-10 text-[10px] font-black uppercase italic">
-                                ${statusBadge}
-                                <span class="text-zinc-500">${ev["Che giorno"]}</span>
+                        <div class="min-w-[340px] p-8 rounded-[2.5rem] border transition-all duration-500 ${cardStyle} ${ev.isPast ? 'scale-95' : 'hover:scale-105'}">
+                            <div class="flex justify-between items-start mb-6">
+                                ${ev.isLive ? '<span class="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse">● LIVE</span>' : 
+                                ev.isPast ? '<span class="border border-zinc-700 text-zinc-500 text-[10px] px-3 py-1 rounded-full">PASSED</span>' : 
+                                '<span class="bg-amber-500 text-black text-[10px] font-black px-3 py-1 rounded-full italic">UPCOMING</span>'}
+                                <span class="text-zinc-500 text-[11px] font-bold">${ev["Che giorno"]}</span>
                             </div>
-                            <h4 class="text-2xl font-black uppercase mb-8 ${ev.isPast ? 'text-zinc-600' : 'text-white'}">Lavoro Collettivo</h4>
+                            
+                            <div class="${locationColor} text-[12px] font-black tracking-widest mb-2 uppercase italic">📍 ${doveShort}</div>
+                            <h4 class="text-2xl font-black uppercase mb-8 ${textColor}">Lavoro Collettivo</h4>
+                            
                             <div class="bg-white/5 p-4 rounded-2xl flex items-center gap-6 mb-8 border border-white/5 font-mono">
-                                <div class="${ev.isPast ? 'text-zinc-600' : 'text-white'}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Inizio</span>${ev.startStr}</div>
+                                <div class="${textColor}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Inizio</span>${formatTime(ev["Da che ora"])}</div>
                                 <div class="w-[1px] h-8 bg-white/10"></div>
-                                <div class="${ev.isPast ? 'text-zinc-600' : 'text-white'}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Fine</span>${ev.endStr}</div>
+                                <div class="${textColor}"><span class="text-[8px] text-zinc-500 block uppercase mb-1">Fine</span>${formatTime(ev["Fino a"])}</div>
                             </div>
+
                             <div class="flex justify-between items-center text-[9px] font-black uppercase italic">
-                                <span class="text-zinc-600">BY ${ev["Proposto da"] || 'GIAN'}</span>
-                                <a href="${ev.isPast ? '#' : mapsLink}" target="_blank" class="text-amber-500 underline ${ev.isPast ? 'hidden' : ''}">Maps</a>
+                                <span class="text-zinc-600">BY ${ev["Proposto da"] || 'COMMUNITY'}</span>
+                                ${!ev.isPast ? `<a href="${mapsLink}" target="_blank" class="text-amber-500 underline tracking-tighter">Vedi Mappa</a>` : ''}
                             </div>
                         </div>`;
                 };
 
-                // Render Active
                 activeEvents.forEach(ev => carousel.innerHTML += renderCard(ev));
 
-                // Separatore Cronologico
                 if (pastEvents.length > 0) {
                     carousel.innerHTML += `
-                        <div class="flex flex-col items-center justify-center min-w-[150px] px-8 group">
-                            <div class="h-px w-full bg-zinc-800 mb-4"></div>
-                            <span class="text-[10px] font-black text-zinc-700 uppercase vertical-text tracking-widest mb-4 group-hover:text-amber-500 transition">Before</span>
-                            <div class="text-zinc-800 text-3xl">→</div>
-                            <div class="h-px w-full bg-zinc-800 mt-4"></div>
+                        <div class="flex flex-col items-center justify-center min-w-[200px] px-4">
+                            <span class="text-white text-2xl font-black uppercase italic tracking-tighter mb-2">BEFORE</span>
+                            <div class="text-white text-5xl font-light animate-bounce-x">→</div>
+                            <div class="h-1 w-12 bg-amber-500 mt-2 rounded-full"></div>
                         </div>`;
                 }
 
-                // Render Past
                 pastEvents.forEach(ev => carousel.innerHTML += renderCard(ev));
             }
         });
