@@ -88,8 +88,8 @@
 
         <section id="faq" class="py-32 px-6 max-w-4xl mx-auto border-t border-white/5">
             <div class="glass-card p-8 rounded-[2rem] border border-white/5 bg-gray-900/50">
-                <h4 class="text-xl font-black italic uppercase mb-2">Nuovi Spazi?</h4>
-                <p class="text-gray-400 text-[10px] uppercase tracking-widest mb-6">Lascia la mail per la waitlist di Ravenna</p>
+                <h4 class="text-xl font-black italic uppercase mb-2">Vuoi essere informato quando c'è un nuovo Cow?</h4>
+                <p class="text-gray-400 text-[10px] uppercase tracking-widest mb-6">Lascia la mail per la waitlist</p>
                 
                 <form id="newsletter-form" class="flex flex-col gap-3">
                     <input type="email" id="news-email" placeholder="latuamail@mail.com" required 
@@ -265,6 +265,10 @@
                                 <span class="text-zinc-600">PROPOSTO DA ${ev["Proposto da"] || 'GIAN'}</span>
                                 ${!ev.isPast ? `<a href="${mapsLink}" target="_blank" class="text-amber-500 underline decoration-2 hover:text-white transition">MAPPA</a>` : ''}
                             </div>
+                            <button onclick="navigator.clipboard.writeText(window.location.origin + window.location.pathname + '#${cardId}'); alert('Link copiato! Mandalo su WhatsApp 🚀');" 
+                                    class="text-zinc-500 hover:text-amber-500 transition">
+                                🔗 LINK
+                            </button>
                         </div>`;
                 };
 
