@@ -236,11 +236,13 @@
                     const doveShort = doveFull.split('-')[0].trim().toUpperCase();
                     const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doveFull)}`;
                     
-                    // Layout card con margini laterali per non "sbattere" contro le altre in scala
+                    // CREIAMO L'ID UNICO: usiamo giorno + location per sicurezza (es: "22-ottobre-darsena")
+                    const cardId = `${ev["Che giorno"]}-${doveShort}`.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+
                     const cardStyle = ev.isPast ? 'bg-zinc-900/60 border-zinc-800 opacity-80' : 'bg-zinc-900 border-white/20 shadow-2xl';
 
                     return `
-                        <div class="relative min-w-[340px] p-9 rounded-[3rem] border transition-all duration-500 ease-out flex-shrink-0
+                        <div id="${cardId}" class="relative min-w-[340px] p-9 rounded-[3rem] border transition-all duration-500 ease-out flex-shrink-0
                             ${cardStyle} ${ev.isPast ? 'scale-95' : 'hover:scale-110 hover:z-50 hover:border-amber-500/50 hover:shadow-[0_20px_60px_rgba(245,158,11,0.2)]'}">
                             
                             <div class="flex justify-between items-start mb-6 font-black uppercase italic tracking-tighter">
@@ -265,6 +267,29 @@
                             </div>
                         </div>`;
                 };
+
+                // Gestione link diretto da WhatsApp
+                setTimeout(() => {
+                    const hash = window.location.hash; // Prende l'ID dall'URL (es: #22-ottobre-darsena)
+                    if (hash) {
+                        const targetCard = document.querySelector(hash);
+                        if (targetCard) {
+                            // Scroll fluido orizzontale dentro il carosello
+                            targetCard.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                inline: 'center', 
+                                block: 'nearest' 
+                            });
+                            
+                            // Effetto "evidenziatore" temporaneo
+                            targetCard.classList.add('border-amber-500');
+                            targetCard.style.boxShadow = '0 0 50px rgba(245, 158, 11, 0.4)';
+                            setTimeout(() => {
+                                targetCard.style.boxShadow = '';
+                            }, 3000);
+                        }
+                    }
+                }, 800); // 800ms per dare tempo alle card di essere disegnate
 
                 activeEvents.forEach(ev => carousel.innerHTML += renderCard(ev));
 
